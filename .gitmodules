@@ -1,0 +1,8 @@
+[submodule "reshade"]
+	path = reshade
+	url = https://github.com/crosire/reshade
+	branch = main
+[submodule "godot-cpp"]
+	path = godot-cpp
+	url = https://github.com/godotengine/godot-cpp
+	branch = master

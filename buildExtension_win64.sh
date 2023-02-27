@@ -1,0 +1,1 @@
+scons platform=windows bits=64
