@@ -7,22 +7,19 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
-#include "plugin.hpp"
+#include "gdReshade.hpp"
+
 
 using namespace godot;
 
-void initialize_gdReshade(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
 
-	ClassDB::register_class<gdReshade>();
+void initialize_gdReshade(ModuleInitializationLevel p_level) {
+	if(p_level != MODULE_INITIALIZATION_LEVEL_SERVERS) return;
+	ClassDB::register_abstract_class<Reshade>(); // should not instance
 }
 
 void uninitialize_gdReshade(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
+	if(p_level != MODULE_INITIALIZATION_LEVEL_SERVERS) return;
 }
 
 extern "C" {
@@ -31,8 +28,8 @@ GDExtensionBool GDE_EXPORT gdReshade_init(const GDExtensionInterface *p_interfac
 	godot::GDExtensionBinding::InitObject init_obj(p_interface, p_library, r_initialization);
 
 	init_obj.register_initializer(initialize_gdReshade);
-	init_obj.register_terminator(uninitialize_gdReshade);
-	init_obj.set_minimum_library_initialization_level(MODULE_INITIALIZATION_LEVEL_SCENE);
+	//init_obj.register_terminator(uninitialize_gdReshade);
+	init_obj.set_minimum_library_initialization_level(MODULE_INITIALIZATION_LEVEL_SERVERS);
 
 	return init_obj.init();
 }

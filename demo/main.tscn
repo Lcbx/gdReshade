@@ -1,9 +1,11 @@
 [gd_scene load_steps=2 format=3 uid="uid://clkk1lp5387n2"]
 
-[ext_resource type="Texture2D" uid="uid://2hgocctabfy1" path="res://icon.svg" id="1_rx020"]
+[sub_resource type="GDScript" id="GDScript_w17lc"]
+script/source = "extends Node3D
+
+func _ready():
+	print(Reshade.compile_shader('test'))
+"
 
 [node name="Main" type="Node3D"]
-
-[node name="gdReshade" type="gdReshade" parent="."]
-position = Vector2(-7.07817, 8.42019)
-texture = ExtResource("1_rx020")
+script = SubResource("GDScript_w17lc")
