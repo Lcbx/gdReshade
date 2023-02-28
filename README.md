@@ -6,6 +6,8 @@ It makes it easier to experiment with postprocessing (Reshade has a very healthy
 
 There's a demo project that shows how to use the extension.
 
+Please take a look at the [GDextension issue tracker](https://github.com/Zylann/godot_voxel/issues/442) before reporting an issue.
+
 ⚠ _I do not intend to maintain this, but will review and merge PRs in my own time_
 
 
