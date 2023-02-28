@@ -1,8 +1,13 @@
 # gdReshade : Reshade extension for Godot
 
-This project was made as a test of godot-cpp [GDExtension](https://github.com/godotengine/godot-cpp).
-It should still be a decent way to test Reshade shaders in Godot,
-or as an example start your own plugin.
+this [extension](https://github.com/godotengine/godot-cpp) compiles and exposes [Reshade](https://github.com/crosire/reshade) shaders natively within the [Godot Engine](https://godotengine.org/)
+
+It makes it easier to experiment with postprocessing (Reshade has a very healthy community developping for it) or simply as an example when starting on your own extension (the SConstruct file in particular is made for being repurposed).
+
+There's a demo project that shows how to use the extension.
+
+⚠ _I do not intend to maintain this, but will review and merge PRs in my own time_
+
 
 ## License
 

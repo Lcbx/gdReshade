@@ -15,7 +15,7 @@ using namespace godot;
 
 void initialize_gdReshade(ModuleInitializationLevel p_level) {
 	if(p_level != MODULE_INITIALIZATION_LEVEL_SERVERS) return;
-	ClassDB::register_abstract_class<Reshade>(); // should not instance
+	ClassDB::register_abstract_class<Reshade>(); // to not allow instancing
 }
 
 void uninitialize_gdReshade(ModuleInitializationLevel p_level) {

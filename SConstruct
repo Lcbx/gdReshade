@@ -46,6 +46,6 @@ for file in os.listdir(gdProjectPath):
 with open(f"{gdProjectPath}{libName}{interfaceExt}", "w") as f:
 	f.write(gdextensionTemplate)
 
-# NOTE : you still need to name your register_types funstions the right way,
+# NOTE : you still need to name your register_types functions the right way,
 #		notably the library's init function (which MUST be named : {libName}_init )
 
