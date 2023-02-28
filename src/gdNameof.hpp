@@ -13,6 +13,6 @@
 
 #define CLASS_NAME get_class_static()
 
-#define METHOD_DEF(method, ...) D_METHOD(FUNC_NAME(method), __VA_ARGS__)
+#define FAST_BIND(method, ...) D_METHOD(FUNC_NAME(method), __VA_ARGS__)
 
 #endif

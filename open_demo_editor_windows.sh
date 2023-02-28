@@ -1,2 +1,1 @@
-# use xdg-open instead for linux
-start ./demo/project.godot
+../Godot4 ./demo/project.godot

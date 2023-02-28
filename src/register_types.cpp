@@ -12,14 +12,15 @@
 
 using namespace godot;
 
+const ModuleInitializationLevel INITAILISATION_LEVEL = MODULE_INITIALIZATION_LEVEL_SCENE;
 
 void initialize_gdReshade(ModuleInitializationLevel p_level) {
-	if(p_level != MODULE_INITIALIZATION_LEVEL_SERVERS) return;
-	ClassDB::register_abstract_class<Reshade>(); // to not allow instancing
+	if(p_level != INITAILISATION_LEVEL) return;
+	ClassDB::register_class<Reshade>(); // to not allow instancing
 }
 
 void uninitialize_gdReshade(ModuleInitializationLevel p_level) {
-	if(p_level != MODULE_INITIALIZATION_LEVEL_SERVERS) return;
+	if(p_level != INITAILISATION_LEVEL) return;
 }
 
 extern "C" {
@@ -29,7 +30,7 @@ GDExtensionBool GDE_EXPORT gdReshade_init(const GDExtensionInterface *p_interfac
 
 	init_obj.register_initializer(initialize_gdReshade);
 	//init_obj.register_terminator(uninitialize_gdReshade);
-	init_obj.set_minimum_library_initialization_level(MODULE_INITIALIZATION_LEVEL_SERVERS);
+	init_obj.set_minimum_library_initialization_level(INITAILISATION_LEVEL);
 
 	return init_obj.init();
 }
