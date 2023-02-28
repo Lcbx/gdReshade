@@ -5,6 +5,7 @@ import sys
 libName = "gdReshade"
 interfaceExt = ".gdextension"
 gdProjectPath = "demo/"
+binPath = f"{gdProjectPath}bin/"
 
 env = SConscript("./godot-cpp/SConstruct")
 
@@ -22,12 +23,12 @@ sources = Glob("src/*.cpp", "reshade/source/*.cpp")
 
 if env["platform"] == "macos":
 	library = env.SharedLibrary(
-		f"{gdProjectPath}bin/{libName}.{env['platform']}.{env['target']}.framework/{libName}.{env['platform']}.{env['target']}",
+		f"{binPath}{libName}.{env['platform']}.{env['target']}.framework/{libName}.{env['platform']}.{env['target']}",
 		source=sources,
 	)
 else:
 	library = env.SharedLibrary(
-		f"{gdProjectPath}bin/{libName}{env['suffix']}{env['SHLIBSUFFIX']}",
+		f"{binPath}{libName}{env['suffix']}{env['SHLIBSUFFIX']}",
 		source=sources,
 	)
 
@@ -39,11 +40,12 @@ with open(f"src/TEMPLATE{interfaceExt}") as f:
 	gdextensionTemplate = f.read().replace("PROJET_NAME",libName)
 
 # delete old interface file, in case was named diferently
+# NOTE : this will delete other interface files in the dir
 for file in os.listdir(gdProjectPath):
 	if file.endswith(interfaceExt):
 		os.remove(os.path.join(gdProjectPath, file))
 
-with open(f"{gdProjectPath}{libName}{interfaceExt}", "w") as f:
+with open(f"{binPath}{libName}{interfaceExt}", "w") as f:
 	f.write(gdextensionTemplate)
 
 # NOTE : you still need to name your register_types functions the right way,
