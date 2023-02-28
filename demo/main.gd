@@ -14,13 +14,9 @@ func compileShaderTest():
 	var shaderCode : String = Reshade.compile_shader_path("res://assets/xhair.fx", v_size)
 	#print(shaderCode)
 
-	#var shader = Shader.new()
-	#shader.code = shaderCode
+	# main.gdshader is based on the generated shaderCode
 
-	#print(shader.get_shader_uniform_list())
-
-	#var mat = ShaderMaterial.new()
-	#mat.shader = shader
+	# TODO : make the translation from glsl more automatic
 
 	var mat = $MeshInstance3D.get_active_material(0)
 	mat.set_shader_parameter("V_ReShade_BackBuffer", get_viewport().get_texture())

@@ -1,14 +1,14 @@
 # gdReshade : Reshade extension for Godot
 
-this [extension](https://github.com/godotengine/godot-cpp) compiles and exposes [Reshade](https://github.com/crosire/reshade) shaders natively within the [Godot Engine](https://godotengine.org/)
+this [extension](https://github.com/godotengine/godot-cpp)'s mission is to import [Reshade](https://github.com/crosire/reshade) shaders natively within the [Godot Engine](https://godotengine.org/)
+It's an experiment with both postprocessing and writing an extension.
 
-It makes it easier to experiment with postprocessing (Reshade has a very healthy community developping for it) or simply as an example when starting on your own extension (the SConstruct file in particular is made for being repurposed).
+Biggest TODO: write a custom ```reshadefx::codegen``` class to generate gdshader code instead of glsl (right now you have to do the [conversion to gdshader](https://docs.godotengine.org/en/latest/tutorials/shaders/converting_glsl_to_godot_shaders.html) by hand).
 
 There's a demo project that shows how to use the extension.
-
 Please take a look at the [GDextension issue tracker](https://github.com/Zylann/godot_voxel/issues/442) before reporting an issue.
 
-⚠ _I do not intend to maintain this, but will review and merge PRs in my own time_
+⚠ _I do not intend to maintain this, but will review any PRs_
 
 
 ## License
