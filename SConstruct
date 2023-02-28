@@ -18,8 +18,8 @@ env = SConscript("./godot-cpp/SConstruct")
 # - LINKFLAGS are for linking flags
 
 # tweak this if you want to use different folders, or more folders, to store your source code in.
-env.Append(CPPPATH=["src/", "reshade/include", "reshade/source"])
-sources = Glob("src/*.cpp", "reshade/source/*.cpp")
+env.Append(CPPPATH=["src/", "src/spirv_headers",  "reshade/include", "reshade/source"])
+sources = [*Glob("src/**.cpp"), *Glob("reshade/source/effect_*.cpp")]
 
 if env["platform"] == "macos":
 	library = env.SharedLibrary(

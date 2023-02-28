@@ -1,10 +1,12 @@
 project(gdReshade)
 cmake_minimum_required(VERSION 3.6)
 
-set(GODOT_GDEXTENSION_DIR ./godot-cpp/ CACHE STRING "Path to GDExtension interface header directory")
+# NOTE : VS throws a compile error.
+# I use this for VS's code completion, then compile with scons
+
+set(GODOT_GDEXTENSION_DIR ./godot-cpp/gdextension/ CACHE STRING "Path to GDExtension interface header directory")
 set(CPP_BINDINGS_PATH ./godot-cpp/ CACHE STRING "Path to C++ bindings")
 set(CPP_RESHADE_PATH ./reshade/ CACHE STRING "Path to reshade lib")
-set(CMAKE_SOURCE_DIR ./build/ CACHE STRING "build directory"
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 	set(TARGET_PATH x11)
@@ -95,8 +97,8 @@ else()
 endif()
 
 # Get Sources
-file(GLOB_RECURSE SOURCES src/*.c** reshade/source/*.c**)
-file(GLOB_RECURSE HEADERS include/*.h** reshade/include/*.h**)
+file(GLOB_RECURSE SOURCES src/**.c**)
+file(GLOB_RECURSE HEADERS src/**.h**)
 
 # Define our godot-cpp library
 add_library(${PROJECT_NAME} SHARED ${SOURCES} ${HEADERS})
@@ -108,8 +110,21 @@ target_include_directories(${PROJECT_NAME} SYSTEM
 		${GODOT_GDEXTENSION_DIR}
 )
 
-# Create the correct name (godot.os.build_type.system_bits)
-# Synchronized with godot-cpp's CMakeLists.txt
+target_include_directories(${PROJECT_NAME} SYSTEM
+	PRIVATE
+		${CPP_RESHADE_PATH}/include
+		${CPP_RESHADE_PATH}/source
+)
+
+## add Reshade src
+#file(GLOB_RECURSE SOURCES {CPP_RESHADE_PATH}/source/**.c**)
+#file(GLOB_RECURSE HEADERS {CPP_RESHADE_PATH}/include/**.h**)
+#add_library(Reshade SHARED ${SOURCES} ${HEADERS})
+
+## add Godot headers
+#file(GLOB_RECURSE SOURCES ${CPP_BINDINGS_PATH}/gen/src/**.c**)
+#file(GLOB_RECURSE HEADERS ${CPP_BINDINGS_PATH}/include/**.h** ${CPP_BINDINGS_PATH}/gen/include/**.h**)
+#add_library(Godot SHARED ${SOURCES} ${HEADERS})
 
 set(BITS 32)
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)

@@ -18,10 +18,12 @@ class Reshade : public Object {
 		
 		Reshade(){}
 		~Reshade(){}
+		static RID compile_shader(String path, Vector2 viewport_size, bool from_source);
 
 	public:
 		
-		static RID compile_shader(String source);
+		static RID compile_shader_source(String source, Vector2 viewport_size);
+		static RID compile_shader_path(String path, Vector2 viewport_size);
 };
 
 }
