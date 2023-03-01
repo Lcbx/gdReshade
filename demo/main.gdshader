@@ -57,7 +57,7 @@ vec3 F_PS_crosshairRing(
 	in vec4 pos,
 	in vec2 texcoord)
 {
-	vec4 _83 = texture( V_ReShade_BackBuffer, texcoord);
+	vec4 _83 = texture(V_ReShade_BackBuffer, texcoord);
 	vec3 color = _83.xyz;
 	float _87 = 5.76000000e+02 + horiz_offset;
 	float _89 = 3.24000000e+02 + vert_offset;
@@ -92,13 +92,15 @@ void vertex()
 	F_PostProcessVS(_param0, _param1, _param2);
 	POSITION = _param1;
 	pos = _param1;
-	UV = _param2;
+	//UV = _param2;
 }
 
 void fragment()
 {
 	vec4 _param0 = pos;
 	vec2 _param1 = SCREEN_UV;
-	//ALBEDO = F_PS_crosshairRing(_param0, _param1);
-	ALBEDO = pos.rgb; // well at least it conmipiles and gets something on-screen
+	vec3 result = F_PS_crosshairRing(_param0, _param1);
+	// well at least it compiles and gets something on-screen
+	ALBEDO = pos.rgb; //result;
+	//ALBEDO = texture(V_ReShade_BackBuffer, SCREEN_UV).rgb;
 }

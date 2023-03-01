@@ -37,7 +37,7 @@ Default(library)
 # auto generation of .gdextension file
 
 with open(f"src/TEMPLATE{interfaceExt}") as f:
-	gdextensionTemplate = f.read().replace("PROJET_NAME",libName)
+	gdextensionTemplate = f.read().replace("PROJECT_NAME",libName)
 
 # delete old interface file, in case was named diferently
 # NOTE : this will delete other interface files in the dir

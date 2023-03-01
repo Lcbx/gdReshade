@@ -18,3 +18,5 @@ script = ExtResource("1_7l3et")
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1.17184)
 mesh = SubResource("QuadMesh_53xu5")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
