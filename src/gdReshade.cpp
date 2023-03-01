@@ -1,6 +1,7 @@
 
 #include "gdNameof.hpp"
 #include "gdReshade.hpp"
+#include "effect_codegen_gdshader.hpp"
 
 #include <godot_cpp/variant/utility_functions.hpp>
 #include <godot_cpp/classes/os.hpp>
@@ -11,7 +12,6 @@
 
 
 #include <effect_parser.hpp>
-#include <effect_codegen.hpp>
 #include <effect_preprocessor.hpp>
 #include <effect_module.hpp>
 #include <version.h>
@@ -36,8 +36,11 @@ String Reshade::compile_shader_path(String path, Vector2i viewport_size) {
 	
 	file->seek_end(-1);
 	auto lastChar = (char) file->get_8();
+	auto expectedChar = RESHADE_EXPECTED_EOL;
+	//PRINT(lastChar, "!=", expectedChar);
 
-	if (String(&lastChar) != RESHADE_EXPECTED_EOL) {
+	// need to use string for endline conversion
+	if (String(&lastChar) != String(&expectedChar)) {
 		UtilityFunctions::push_warning("Reshade::preprocessor: script should end with an endline (\\n). adding one.");
 		file->store_line("" + RESHADE_EXPECTED_EOL);
 	}
@@ -91,7 +94,7 @@ String Reshade::compile_shader(String shader, Vector2i viewport_size, bool from_
 	
 	std::unique_ptr<reshadefx::codegen> backend;
 	//			  reshadefx::create_codegen_glsl(vulkan_semantics, debug_info, spec_constants, invert_y_axis));
-	backend.reset(reshadefx::create_codegen_glsl(true, false, false, false));
+	backend.reset(reshadefx::create_codegen_gdshader(true, false, false, false));
 
 	if (!parser.parse(pp_output, backend.get()))
 	{
