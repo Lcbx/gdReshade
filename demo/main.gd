@@ -12,14 +12,14 @@ func compileShaderTest():
 	print(Reshade.compile_shader_source("test", v_size))
 
 	var shaderCode : String = Reshade.compile_shader_path("res://assets/xhair.fx", v_size)
-	#print(shaderCode)
+	print(shaderCode.get_slice('\n', 0))
 
 	# main.gdshader is based on the generated shaderCode
 
 	# TODO : make the translation from glsl more automatic
 
 	var mat = $MeshInstance3D.get_active_material(0)
-	mat.set_shader_parameter("V_ReShade_BackBuffer", get_viewport().get_texture())
+	#mat.set_shader_parameter("V_ReShade_BackBuffer", get_viewport().get_texture())
 	#$MeshInstance3D.material_override = mat
 	#print(ResourceSaver.save(shader))
 

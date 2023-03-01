@@ -4,43 +4,69 @@
 
 #include <godot_cpp/variant/utility_functions.hpp>
 #include <godot_cpp/classes/os.hpp>
+#include <godot_cpp/classes/file_access.hpp>
 //#include <godot_cpp/classes/packed_data_container.hpp>
 //#include <godot_cpp/classes/rendering_server.hpp>
-#include <godot_cpp/classes/resource_saver.hpp>
+//#include <godot_cpp/classes/resource_saver.hpp>
+
 
 #include <effect_parser.hpp>
 #include <effect_codegen.hpp>
 #include <effect_preprocessor.hpp>
 #include <effect_module.hpp>
-//#include <version.h> missing
+#include <version.h>
 
 #define PRINT(...) UtilityFunctions::print(__VA_ARGS__)
 
 using namespace godot;
 
+const char RESHADE_EXPECTED_EOL = '\n';
+
 String Reshade::compile_shader_source(String source, Vector2i viewport_size) {
-	if (source[source.length() - 1] != '\n') {
+	if (source[source.length() - 1] != RESHADE_EXPECTED_EOL) {
 		UtilityFunctions::push_warning("Reshade::preprocessor: script should end with an endline (\\n). adding one.");
-		source = source + "\n";
+		source = source + RESHADE_EXPECTED_EOL;
 	}
 	return compile_shader(source, viewport_size, true);
 }
 
 String Reshade::compile_shader_path(String path, Vector2i viewport_size) {
-	return compile_shader(path.replace("res://", ""), viewport_size, false);
+
+	auto file = FileAccess::open(path, FileAccess::ModeFlags::READ_WRITE);
+	
+	file->seek_end(-1);
+	auto lastChar = (char) file->get_8();
+
+	if (String(&lastChar) != RESHADE_EXPECTED_EOL) {
+		UtilityFunctions::push_warning("Reshade::preprocessor: script should end with an endline (\\n). adding one.");
+		file->store_line("" + RESHADE_EXPECTED_EOL);
+	}
+	
+	path = file->get_path_absolute();
+
+	// closing file
+	// very important since otherwise it won't be updated before executing compile_shader and we have done this for nothing
+	file.unref(); 
+
+	return compile_shader(path, viewport_size, false);
 }
 
 String Reshade::compile_shader(String shader, Vector2i viewport_size, bool from_source) {
 
 	auto shader_c_str = shader.utf8().get_data();
+	//PRINT(shader_c_str);
 
 	reshadefx::parser parser;
 	reshadefx::preprocessor pp;
 
-	// based on command 'git describe --tags' in reshade folder => v5.7.0-2-g38cf982a
-	// TODO? : automagically update this. Why doesn't Reshade just track the version.h file ?  
-	pp.add_macro_definition("__RESHADE__", std::to_string(5 * 10000 + 7 * 100 + 0));
-	pp.add_macro_definition("__RESHADE_PERFORMANCE_MODE__", "0");
+	// we generate reshade's version.h ourselves (see get_reshade_version.sh) based on the command 'git describe --tags'
+	auto sVersionNumbers = String(RESHADE_VERSION).split(".", false);
+	int vMajor = sVersionNumbers[0].replace("v", "").to_int();
+	int vMinor = sVersionNumbers[1].to_int();
+
+	//PRINT(RESHADE_VERSION);
+	pp.add_macro_definition("__RESHADE__", std::to_string(vMajor * 10000 + vMinor * 100 + 0));
+	pp.add_macro_definition("__RESHADE_PERFORMANCE_MODE__", "1");
 
 	pp.add_macro_definition("BUFFER_WIDTH",  std::to_string(viewport_size.x));
 	pp.add_macro_definition("BUFFER_HEIGHT", std::to_string(viewport_size.y));
@@ -52,7 +78,10 @@ String Reshade::compile_shader(String shader, Vector2i viewport_size, bool from_
 	else if(std::filesystem::exists(shader_c_str))
 		pp.append_file(shader_c_str);
 	// not from source and can't find the source file 
-	else UtilityFunctions::push_error("Reshade::preprocessor: no script at given path ", shader_c_str);
+	else {
+		UtilityFunctions::push_error("Reshade::preprocessor: no script at given path <", shader_c_str, ">");
+		return "";
+	}
 
 	auto pp_output = pp.output();
 	auto pp_errors = pp.errors();
@@ -77,7 +106,7 @@ String Reshade::compile_shader(String shader, Vector2i viewport_size, bool from_
 
 	//PRINT(module.hlsl.c_str());
 
-	// reshade uses hlsl property for glgl...
+	// reshade uses hlsl property for glsl...
 	String glslSource = String(module.hlsl.c_str());
 
 	//for (auto entry : module.entry_points) {
