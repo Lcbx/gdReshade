@@ -59,13 +59,9 @@ private:
 
 	void write_result(module &module) override
 	{
+		// TODO : split multiple passes
+		// TODO?: define our own module so we can to this in a less hackish way (not a fan of Reshade's module struct definition)
 		module = std::move(_module);
-
-		if (_enable_16bit_types)
-			// GL_NV_gpu_shader5, GL_AMD_gpu_shader_half_float or GL_EXT_shader_16bit_storage
-			module.hlsl += "#extension GL_NV_gpu_shader5 : require\n";
-		if (_enable_control_flow_attributes)
-			module.hlsl += "#extension GL_EXT_control_flow_attributes : enable\n";
 
 		if (_uses_fmod)
 			module.hlsl += "float fmodHLSL(float x, float y) { return x - y * trunc(x / y); }\n"
@@ -98,9 +94,7 @@ private:
 				"uvec4 compCond(bvec4 cond, uvec4 a, uvec4 b) { return uvec4(cond.x ? a.x : b.x, cond.y ? a.y : b.y, cond.z ? a.z : b.z, cond.w ? a.w : b.w); }\n";
 
 		if (!_ubo_block.empty())
-			// Read matrices in column major layout, even though they are actually row major, to avoid transposing them on every access (since GLSL uses column matrices)
-			// TODO: This technically only works with square matrices
-			module.hlsl += "layout(std140, column_major, binding = 0) uniform _Globals {\n" + _ubo_block + "};\n";
+			module.hlsl += _ubo_block + "\n\n";
 
 		module.hlsl += _blocks.at(0);
 	}
@@ -403,13 +397,13 @@ private:
 	std::string semantic_to_builtin(std::string name, const std::string &semantic, shader_type stype) const
 	{
 		if (semantic == "SV_POSITION")
-			return stype == shader_type::ps ? "gl_FragCoord" : "gl_Position";
+			return "POSITION";
 		if (semantic == "SV_POINTSIZE")
 			return "gl_PointSize";
 		if (semantic == "SV_DEPTH")
 			return "gl_FragDepth";
 		if (semantic == "SV_VERTEXID")
-			return _vulkan_semantics ? "gl_VertexIndex" : "gl_VertexID";
+			return "VERTEX_ID";
 		if (semantic == "SV_ISFRONTFACE")
 			return "gl_FrontFacing";
 		if (semantic == "SV_GROUPID")
@@ -486,7 +480,7 @@ private:
 
 		write_location(code, loc);
 
-		code += "layout(binding = " + std::to_string(info.binding) + ") uniform sampler2D " + id_to_name(info.id) + ";\n";
+		code += "uniform sampler2D " + id_to_name(info.id) + ";\n";
 
 		_module.samplers.push_back(info);
 
@@ -681,12 +675,10 @@ private:
 		info.definition = make_id();
 
 		// Name is used in other places like the "ENTRY_POINT" defines, so escape it here
-		info.unique_name = escape_name(info.unique_name);
+		if(!is_entry_point)
+			info.unique_name = escape_name(info.unique_name);
 
-		if (!is_entry_point)
-			define_name<naming::unique>(info.definition, info.unique_name);
-		else
-			define_name<naming::reserved>(info.definition, "main");
+		define_name<naming::unique>(info.definition, info.unique_name);
 
 		std::string &code = _blocks.at(_current_block);
 
@@ -729,18 +721,35 @@ private:
 		// Modify entry point name so each thread configuration is made separate
 		if (stype == shader_type::cs)
 			func.unique_name = 'E' + func.unique_name +
-				'_' + std::to_string(num_threads[0]) +
-				'_' + std::to_string(num_threads[1]) +
-				'_' + std::to_string(num_threads[2]);
+			'_' + std::to_string(num_threads[0]) +
+			'_' + std::to_string(num_threads[1]) +
+			'_' + std::to_string(num_threads[2]);
 
 		if (const auto it = std::find_if(_module.entry_points.begin(), _module.entry_points.end(),
 				[&func](const auto &ep) { return ep.name == func.unique_name; });
 			it != _module.entry_points.end())
 			return;
 
-		_module.entry_points.push_back({ func.unique_name, stype });
+		// gdShader : leaving compute shader stuff since godot's are mostly glsl I think
+		// I dunno how much conversion there needs to be for those
 
-		_blocks.at(0) += "#ifdef ENTRY_POINT_" + func.unique_name + '\n';
+		std::string func_new_name;
+		switch (stype) {
+		case shader_type::vs:
+			// ensure the shader_type is set
+			_module.hlsl += "shader_type spatial;\n\n";
+
+			func_new_name = "vertex"; break;
+		case shader_type::ps:
+			func_new_name = "fragment"; break;
+		case shader_type::cs:
+			func_new_name = "compute"; break;
+		}
+
+		func.unique_name = func_new_name;
+
+		_module.entry_points.push_back({ func_new_name, stype });
+
 		if (stype == shader_type::cs)
 			_blocks.at(0) += "layout(local_size_x = " + std::to_string(num_threads[0]) +
 			                      ", local_size_y = " + std::to_string(num_threads[1]) +
@@ -748,6 +757,7 @@ private:
 
 		function_info entry_point;
 		entry_point.return_type = { type::t_void };
+		entry_point.unique_name = func_new_name;
 
 		std::unordered_map<std::string, std::string> semantic_to_varying_variable;
 		const auto create_varying_variable = [this, stype, &semantic_to_varying_variable](type type, unsigned int extra_qualifiers, const std::string &name, const std::string &semantic) {
@@ -774,7 +784,8 @@ private:
 
 			for (int a = 0; a < array_length; ++a)
 			{
-				code += "layout(location = " + std::to_string(location + a) + ") ";
+				// layout keeping as comment JIC
+				code += "//";
 				write_type<false, false, true>(code, type);
 				code += ' ';
 				code += escape_name(type.is_array() ?
@@ -790,11 +801,11 @@ private:
 			const struct_info &definition = find_struct(func.return_type.definition);
 
 			for (const struct_member_info &member : definition.member_list)
-				create_varying_variable(member.type, type::q_out, "_return_" + member.name, member.semantic);
+				create_varying_variable(member.type, type::q_out, "COLOR" + member.name, member.semantic);
 		}
 		else if (!func.return_type.is_void())
 		{
-			create_varying_variable(func.return_type, type::q_out, "_return", func.return_semantic);
+			create_varying_variable(func.return_type, type::q_out, "COLOR", func.return_semantic);
 		}
 
 		const auto num_params = func.parameter_list.size();
@@ -1080,10 +1091,8 @@ private:
 		if (_flip_vert_y && stype == shader_type::vs)
 			code += "\tgl_Position.y = -gl_Position.y;\n";
 
-		leave_block_and_return(0);
+		set_block(0);
 		leave_function();
-
-		_blocks.at(0) += "#endif\n";
 	}
 
 	id   emit_load(const expression &exp, bool force_new_id) override
