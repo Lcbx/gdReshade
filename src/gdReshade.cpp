@@ -31,33 +31,15 @@ String Reshade::compile_shader_source(String source, Vector2i viewport_size) {
 }
 
 String Reshade::compile_shader_path(String path, Vector2i viewport_size) {
-
-	auto file = FileAccess::open(path, FileAccess::ModeFlags::READ_WRITE);
-	
-	file->seek_end(-1);
-	auto lastChar = (char) file->get_8();
-	auto expectedChar = RESHADE_EXPECTED_EOL;
-	//PRINT(lastChar, "!=", expectedChar);
-
-	// need to use string for endline conversion
-	if (String(&lastChar) != String(&expectedChar)) {
-		UtilityFunctions::push_warning("Reshade::preprocessor: script should end with an endline (\\n). adding one.");
-		file->store_line("" + RESHADE_EXPECTED_EOL);
-	}
-	
+	// simplest way to get gogot paths ?
+	auto file = FileAccess::open(path, FileAccess::ModeFlags::READ);
 	path = file->get_path_absolute();
-
-	// closing file
-	// very important since otherwise it won't be updated before executing compile_shader and we have done this for nothing
-	file.unref(); 
-
 	return compile_shader(path, viewport_size, false);
 }
 
 String Reshade::compile_shader(String shader, Vector2i viewport_size, bool from_source) {
 
-	auto shader_c_str = shader.utf8().get_data();
-	//PRINT(shader_c_str);
+	//PRINT(shader);
 
 	reshadefx::parser parser;
 	reshadefx::preprocessor pp;
@@ -76,13 +58,17 @@ String Reshade::compile_shader(String shader, Vector2i viewport_size, bool from_
 	pp.add_macro_definition("BUFFER_RCP_WIDTH", "(1.0 / BUFFER_WIDTH)");
 	pp.add_macro_definition("BUFFER_RCP_HEIGHT", "(1.0 / BUFFER_HEIGHT)");
 
-	if (from_source)
-		pp.append_string(std::string(shader_c_str), std::filesystem::path());
-	else if(std::filesystem::exists(shader_c_str))
-		pp.append_file(shader_c_str);
+	auto shader_std_str = std::string(shader.utf8().get_data());
+	if (from_source) {
+		pp.append_string(shader_std_str, std::filesystem::path());
+	}
+	else if (FileAccess::file_exists(shader)) {
+		pp.append_file(shader_std_str);
+		PRINT(shader_std_str.c_str());
+	}
 	// not from source and can't find the source file 
 	else {
-		UtilityFunctions::push_error("Reshade::preprocessor: no script at given path <", shader_c_str, ">");
+		UtilityFunctions::push_error("Reshade::preprocessor: no script at given path <", shader_std_str.c_str(), ">");
 		return "";
 	}
 
