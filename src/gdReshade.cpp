@@ -20,24 +20,37 @@
 
 using namespace godot;
 
-const char RESHADE_EXPECTED_EOL = '\n';
 
-String Reshade::compile_shader_source(String source, Vector2i viewport_size) {
-	if (source[source.length() - 1] != RESHADE_EXPECTED_EOL) {
-		UtilityFunctions::push_warning("Reshade::preprocessor: script should end with an endline (\\n). adding one.");
-		source = source + RESHADE_EXPECTED_EOL;
-	}
+String Reshade::compile_gdshader_source(String source, Vector2i viewport_size) {
 	return compile_shader(source, viewport_size, true);
 }
 
-String Reshade::compile_shader_path(String path, Vector2i viewport_size) {
-	// simplest way to get gogot paths ?
-	auto file = FileAccess::open(path, FileAccess::ModeFlags::READ);
-	path = file->get_path_absolute();
+String Reshade::compile_gdshader_path(String path, Vector2i viewport_size) {
 	return compile_shader(path, viewport_size, false);
 }
+String Reshade::compile_glsl_source(String source, Vector2i viewport_size) {
+	return compile_shader(source, viewport_size, true, true);
+}
 
-String Reshade::compile_shader(String shader, Vector2i viewport_size, bool from_source) {
+String Reshade::compile_glsl_path(String path, Vector2i viewport_size) {
+	return compile_shader(path, viewport_size, false, true);
+}
+
+const char RESHADE_EXPECTED_EOL = '\n';
+
+String Reshade::compile_shader(String shader, Vector2i viewport_size, bool from_source, bool glsl) {
+
+	if (from_source) {
+		if (shader[shader.length() - 1] != RESHADE_EXPECTED_EOL) {
+			UtilityFunctions::push_warning("Reshade::preprocessor: script should end with an endline (\\n). adding one.");
+			shader = shader + RESHADE_EXPECTED_EOL;
+		}
+	}
+	else {
+		// simplest way to get godot paths ?
+		auto file = FileAccess::open(shader, FileAccess::ModeFlags::READ);
+		shader = file->get_path_absolute();
+	}
 
 	//PRINT(shader);
 
@@ -64,7 +77,6 @@ String Reshade::compile_shader(String shader, Vector2i viewport_size, bool from_
 	}
 	else if (FileAccess::file_exists(shader)) {
 		pp.append_file(shader_std_str);
-		PRINT(shader_std_str.c_str());
 	}
 	// not from source and can't find the source file 
 	else {
@@ -79,8 +91,11 @@ String Reshade::compile_shader(String shader, Vector2i viewport_size, bool from_
 	else if (pp_output.empty()) UtilityFunctions::push_error("Reshade::preprocessor: something went wrong quietly");
 	
 	std::unique_ptr<reshadefx::codegen> backend;
-	//			  reshadefx::create_codegen_glsl(vulkan_semantics, debug_info, spec_constants, invert_y_axis));
-	backend.reset(reshadefx::create_codegen_gdshader(true, false, false, false));
+	//				  reshadefx::create_codegen_glsl(vulkan_semantics, debug_info, spec_constants, invert_y_axis));
+	if(glsl)
+		backend.reset(reshadefx::create_codegen_glsl(true, false, false, false));
+	else
+		backend.reset(reshadefx::create_codegen_gdshader(true, false, false, false));
 
 	if (!parser.parse(pp_output, backend.get()))
 	{
@@ -108,6 +123,9 @@ String Reshade::compile_shader(String shader, Vector2i viewport_size, bool from_
 }
 
 void Reshade::_bind_methods(){
-	ClassDB::bind_static_method(CLASS_NAME, FAST_BIND(compile_shader_source, "source", "viewport_size"), &Reshade::compile_shader_source);
-	ClassDB::bind_static_method(CLASS_NAME, FAST_BIND(compile_shader_path,	 "path",   "viewport_size"), &Reshade::compile_shader_path);
+	ClassDB::bind_static_method(CLASS_NAME, FAST_BIND(compile_gdshader_source, "source", "viewport_size"), &Reshade::compile_gdshader_source);
+	ClassDB::bind_static_method(CLASS_NAME, FAST_BIND(compile_gdshader_path,	 "path",   "viewport_size"), &Reshade::compile_gdshader_path);
+
+	ClassDB::bind_static_method(CLASS_NAME, FAST_BIND(compile_glsl_source, "source", "viewport_size"), &Reshade::compile_glsl_source);
+	ClassDB::bind_static_method(CLASS_NAME, FAST_BIND(compile_glsl_path, "path", "viewport_size"), &Reshade::compile_glsl_path);
 }
